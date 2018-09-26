@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t xdarko/react-multi -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run xdarko/react-multi npm test -- --coverage
+
+after_success:
+  # Build prod images
+  - docker build -t xdarko/multi-client ./client
+  - docker build -t xdarko/multi-worker ./worker
+  - docker build -t xdarko/multi-nginx ./nginx
+  - docker build -t xdarko/multi-server ./server
+
+  # Login to Docker CLI:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Push prod images to Docker Hub:
+  - docker push xdarko/multi-client
+  - docker push xdarko/multi-worker
+  - docker push xdarko/multi-nginx
+  - docker push xdarko/multi-server
